@@ -51,6 +51,21 @@ class ChatProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> deleteConversation(int conversationId) async {
+    try {
+      await _apiService.deleteConversation(conversationId);
+      _conversations.removeWhere((c) => c.id == conversationId);
+      if (_currentConversation?.id == conversationId) {
+        _currentConversation = null;
+        _messages = [];
+      }
+      notifyListeners();
+    } catch (e) {
+      print(e);
+      rethrow;
+    }
+  }
+
   Future<void> sendMessage(String content) async {
     if (_isStreaming) return;
 

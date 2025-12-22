@@ -39,6 +39,13 @@ def get_conversations(db: Session, user_id: int, skip: int = 0, limit: int = 100
 def get_conversation(db: Session, conversation_id: int):
     return db.query(models.Conversation).filter(models.Conversation.id == conversation_id).first()
 
+def delete_conversation(db: Session, conversation_id: int):
+    db_conversation = db.query(models.Conversation).filter(models.Conversation.id == conversation_id).first()
+    if db_conversation:
+        db.delete(db_conversation)
+        db.commit()
+    return db_conversation
+
 def create_message(db: Session, message: schemas.MessageCreate, conversation_id: int):
     db_message = models.Message(**message.dict(), conversation_id=conversation_id)
     db.add(db_message)

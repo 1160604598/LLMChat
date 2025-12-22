@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import '../providers/chat_provider.dart';
 import 'settings_screen.dart';
+import '../l10n/app_localizations.dart';
 
 class ChatScreen extends StatefulWidget {
   @override
@@ -40,7 +41,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(chatProvider.currentConversation?.title ?? 'New Chat'),
+        title: Text(chatProvider.currentConversation?.title ?? S.of(context).newChat),
         actions: [
           IconButton(
             icon: Icon(Icons.add),
@@ -62,7 +63,7 @@ class _ChatScreenState extends State<ChatScreen> {
       drawer: Drawer(
         child: Column(
           children: [
-            DrawerHeader(child: Center(child: Text('Conversations'))),
+            DrawerHeader(child: Center(child: Text(S.of(context).conversations))),
             Expanded(
               child: ListView.builder(
                 itemCount: chatProvider.conversations.length,
@@ -75,6 +76,31 @@ class _ChatScreenState extends State<ChatScreen> {
                       chatProvider.selectConversation(conv);
                       Navigator.pop(context);
                     },
+                    trailing: IconButton(
+                      icon: Icon(Icons.delete, color: Colors.grey),
+                      onPressed: () {
+                        showDialog(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            title: Text(S.of(context).confirmDelete),
+                            content: Text(S.of(context).areYouSure),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context),
+                                child: Text(S.of(context).cancel),
+                              ),
+                              TextButton(
+                                onPressed: () {
+                                  Navigator.pop(context);
+                                  chatProvider.deleteConversation(conv.id);
+                                },
+                                child: Text(S.of(context).delete, style: TextStyle(color: Colors.red)),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
                   );
                 },
               ),
@@ -118,7 +144,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                       Clipboard.setData(ClipboardData(text: msg.content));
                                       ScaffoldMessenger.of(context).showSnackBar(
                                         SnackBar(
-                                          content: Text('Copied to clipboard!'),
+                                          content: Text(S.of(context).copied),
                                           duration: Duration(seconds: 1),
                                         ),
                                       );
@@ -147,7 +173,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   child: TextField(
                     controller: _messageController,
                     decoration: InputDecoration(
-                      hintText: 'Type a message...',
+                      hintText: S.of(context).typeMessage,
                       border: OutlineInputBorder(),
                     ),
                     onSubmitted: (value) {

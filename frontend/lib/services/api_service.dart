@@ -138,6 +138,18 @@ class ApiService {
     }
   }
 
+  Future<void> deleteConversation(int conversationId) async {
+    final token = await getToken();
+    final response = await http.delete(
+      Uri.parse('$baseUrl/chat/conversations/$conversationId'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to delete conversation');
+    }
+  }
+
   Future<List<Message>> getMessages(int conversationId) async {
     final token = await getToken();
     final response = await http.get(

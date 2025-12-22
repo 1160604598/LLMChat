@@ -39,6 +39,18 @@ def get_conversation(
         raise HTTPException(status_code=404, detail="Conversation not found")
     return conversation
 
+@router.delete("/conversations/{conversation_id}")
+def delete_conversation(
+    conversation_id: int,
+    db: Session = Depends(auth.get_db),
+    current_user: models.User = Depends(auth.get_current_user)
+):
+    conversation = crud.get_conversation(db, conversation_id)
+    if conversation is None or conversation.user_id != current_user.id:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+    crud.delete_conversation(db, conversation_id)
+    return {"status": "success"}
+
 @router.post("/stream")
 async def stream_chat(
     request: schemas.ChatRequest,
