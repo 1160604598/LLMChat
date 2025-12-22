@@ -54,6 +54,9 @@ flutter run -d windows
 
 ### 3. 打包发布 (Build for Release)
 
+本项目支持构建 Windows 桌面版和 Android 移动版。
+
+#### Windows 桌面版
 本项目提供了一键打包脚本，可生成无需安装环境的绿色版程序。
 
 **环境要求**:
@@ -62,9 +65,7 @@ flutter run -d windows
 - Visual Studio 2019+ (C++ 桌面开发工作负载)
 
 **构建步骤**:
-
 在 PowerShell 中运行项目根目录下的脚本：
-
 ```powershell
 .\build_release.ps1
 ```
@@ -77,6 +78,22 @@ flutter run -d windows
 - `start_app.bat`: 一键启动脚本。
 
 只需将整个 `dist` 文件夹分发给用户即可。
+
+#### Android 移动版 (推荐使用 GitHub Actions)
+由于本地配置 Android 开发环境较为繁琐，本项目已配置 GitHub Actions 自动构建流程。
+
+1. **推送代码**: 将代码提交到 GitHub 仓库。
+2. **自动构建**: 提交后会自动触发 `Build Android` 工作流。
+3. **下载 APK**: 构建完成后，在 GitHub Actions 页面下载 `app-release` 构件（Artifact）。
+
+**本地构建 (可选)**:
+如果需要在本地构建 APK，请确保已安装 Android Studio 和 Android SDK。
+```bash
+cd frontend
+flutter build apk --release
+```
+生成的 APK 位于: `frontend/build/app/outputs/flutter-apk/app-release.apk`
+
 
 ## ⚙️ 使用说明
 
