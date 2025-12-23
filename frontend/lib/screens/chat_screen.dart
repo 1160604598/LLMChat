@@ -36,7 +36,7 @@ class _ChatScreenState extends State<ChatScreen> {
     if (notification.depth != 0) return false;
     if (notification.metrics.axis != Axis.vertical) return false;
 
-    // 1. Detect user intent: Cancel following if user scrolls up
+    // 1. 检测用户意图：如果用户向上滚动，取消自动跟随
     if (notification is UserScrollNotification) {
       if (notification.direction == ScrollDirection.reverse) {
         if (_isFollowingBottom) {
@@ -46,14 +46,14 @@ class _ChatScreenState extends State<ChatScreen> {
           });
         }
       } else if (notification.direction == ScrollDirection.forward) {
-        // Optional: If user scrolls down manually, we can potentially hide the button
-        // if they reach bottom, which is handled in ScrollUpdateNotification
+        // 可选：如果用户手动向下滚动，我们可能隐藏按钮
+        // 如果他们到达底部，这将在 ScrollUpdateNotification 中处理
       }
     }
 
-    // 2. Detect position: Resume following if reached bottom
+    // 2. 检测位置：如果到达底部，恢复自动跟随
     if (notification is ScrollUpdateNotification) {
-      // Explicitly check for upward scroll in update notification to catch drag events immediately
+      // 在更新通知中明确检查向上滚动，以便立即捕获拖拽事件
       if (notification.scrollDelta != null && notification.scrollDelta! < 0) {
         if (_isFollowingBottom) {
           setState(() {
@@ -63,9 +63,9 @@ class _ChatScreenState extends State<ChatScreen> {
         }
       }
 
-      // If close to bottom, consider it as reached bottom
-      // But ONLY if we are scrolling down (positive delta). 
-      // This prevents the "sticky bottom" effect when user starts scrolling up from the bottom.
+      // 如果接近底部，视为已到达底部
+      // 但仅当我们向下滚动时（正 delta）。
+      // 这防止了用户从底部开始向上滚动时的“粘性底部”效果。
       if (notification.metrics.extentAfter < 100) {
         if (notification.scrollDelta != null && notification.scrollDelta! > 0) {
           if (!_isFollowingBottom) {
@@ -77,17 +77,17 @@ class _ChatScreenState extends State<ChatScreen> {
         }
       }
       
-      // Update button visibility
+      // 更新按钮可见性
       if (!_isFollowingBottom) {
         if (notification.metrics.extentAfter > 200) {
           if (!_showScrollToBottomButton) setState(() => _showScrollToBottomButton = true);
         } else {
-          // If user scrolled down close to bottom but didn't trigger extentAfter < 50 check above yet
-          // (e.g. at 60), we might want to hide button or keep it? 
-          // Let's keep it simple: only hide when truly close (<50) which sets _isFollowingBottom = true
+          // 如果用户向下滚动接近底部但尚未触发上面的 extentAfter < 50 检查
+          // (例如在 60)，我们可能想要隐藏按钮还是保留它？
+          // 让我们保持简单：仅在真正接近 (<50) 时隐藏，这会设置 _isFollowingBottom = true
         }
       } else {
-        // If following bottom, ensure button is hidden
+        // 如果正在跟随底部，确保按钮被隐藏
          if (_showScrollToBottomButton) setState(() => _showScrollToBottomButton = false);
       }
     }
@@ -98,8 +98,8 @@ class _ChatScreenState extends State<ChatScreen> {
     if (!_scrollController.hasClients) return;
     
     if (isStreaming) {
-      // Use jumpTo during streaming to ensure we stay pinned to the bottom
-      // animateTo can lag behind if updates are too frequent
+      // 在流式传输期间使用 jumpTo 以确保我们保持固定在底部
+      // 如果更新太频繁，animateTo 可能会滞后
       _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
     } else {
       await _scrollController.animateTo(
@@ -114,7 +114,7 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget build(BuildContext context) {
     final chatProvider = Provider.of<ChatProvider>(context);
 
-    // Auto scroll to bottom when messages change
+    // 当消息改变时自动滚动到底部
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_isFollowingBottom) {
         _scrollToBottom(isStreaming: chatProvider.isStreaming);
