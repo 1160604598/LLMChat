@@ -2,7 +2,9 @@
 
 一个全栈大语言模型（LLM）对话应用，支持流式输出（Streaming），体验类似 ChatGPT。基于 Python FastAPI 后端和 Flutter Windows 桌面端构建。
 
-![Screenshot](screenshot_placeholder.png) *（此处可放置应用截图）*
+![Screenshot](png/windows_client.png)
+![Screenshot](png/chrome.png)
+![Screenshot](png/apk.jpg)
 
 ## ✨ 主要特性
 
