@@ -35,6 +35,13 @@
 
 ### 1. 后端开发 (Backend)
 
+**方式一：使用脚本 (推荐)**
+在项目根目录运行：
+```powershell
+.\start_backend.ps1
+```
+
+**方式二：手动运行**
 ```bash
 cd backend
 # 安装依赖
