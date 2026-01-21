@@ -8,6 +8,7 @@ import '../models/message.dart';
 class ApiService {
   static const String defaultBaseUrl = 'http://127.0.0.1:8000';
   static String baseUrl = defaultBaseUrl;
+  static Function()? onTokenExpired;
 
   static Future<void> init() async {
     final prefs = await SharedPreferences.getInstance();
@@ -76,6 +77,10 @@ class ApiService {
       headers: {'Authorization': 'Bearer $token'},
     );
 
+    if (response.statusCode == 401) {
+      onTokenExpired?.call();
+    }
+
     if (response.statusCode == 200) {
       return User.fromJson(jsonDecode(response.body));
     } else {
@@ -98,6 +103,10 @@ class ApiService {
       }),
     );
 
+    if (response.statusCode == 401) {
+      onTokenExpired?.call();
+    }
+
     if (response.statusCode == 200) {
       return User.fromJson(jsonDecode(response.body));
     } else {
@@ -111,6 +120,10 @@ class ApiService {
       Uri.parse('$baseUrl/chat/conversations'),
       headers: {'Authorization': 'Bearer $token'},
     );
+
+    if (response.statusCode == 401) {
+      onTokenExpired?.call();
+    }
 
     if (response.statusCode == 200) {
       final List<dynamic> data = jsonDecode(response.body);
@@ -131,6 +144,10 @@ class ApiService {
       body: jsonEncode({'title': title}),
     );
 
+    if (response.statusCode == 401) {
+      onTokenExpired?.call();
+    }
+
     if (response.statusCode == 200) {
       return Conversation.fromJson(jsonDecode(response.body));
     } else {
@@ -145,6 +162,10 @@ class ApiService {
       headers: {'Authorization': 'Bearer $token'},
     );
 
+    if (response.statusCode == 401) {
+      onTokenExpired?.call();
+    }
+
     if (response.statusCode != 200) {
       throw Exception('Failed to delete conversation');
     }
@@ -156,6 +177,10 @@ class ApiService {
       Uri.parse('$baseUrl/chat/conversations/$conversationId'),
       headers: {'Authorization': 'Bearer $token'},
     );
+
+    if (response.statusCode == 401) {
+      onTokenExpired?.call();
+    }
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
@@ -176,6 +201,11 @@ class ApiService {
       'conversation_id': conversationId,
     });
 
-    return await request.send();
+    final response = await request.send();
+    if (response.statusCode == 401) {
+      onTokenExpired?.call();
+      throw Exception('Unauthorized');
+    }
+    return response;
   }
 }

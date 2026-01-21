@@ -68,6 +68,11 @@ class _AuthWrapperState extends State<AuthWrapper> {
   @override
   void initState() {
     super.initState();
+    ApiService.onTokenExpired = () {
+      if (mounted) {
+        Provider.of<AuthProvider>(context, listen: false).logout();
+      }
+    };
     Provider.of<AuthProvider>(context, listen: false).checkAuth();
   }
 
