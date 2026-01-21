@@ -225,6 +225,61 @@ class _ChatScreenState extends State<ChatScreen> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
+                                    if (msg.reasoningContent != null && msg.reasoningContent!.isNotEmpty) ...[
+                                      Container(
+                                        width: double.infinity,
+                                        padding: EdgeInsets.all(8),
+                                        margin: EdgeInsets.only(bottom: 8),
+                                        decoration: BoxDecoration(
+                                            color: isDark ? Colors.black26 : Colors.white54,
+                                            borderRadius: BorderRadius.circular(8),
+                                            border: Border(
+                                              left: BorderSide(
+                                                width: 3, 
+                                                color: Colors.grey.withOpacity(0.5),
+                                              ),
+                                            ),
+                                          ),
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              children: [
+                                                Text(
+                                                  S.of(context).thinkingProcess,
+                                                  style: TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 11,
+                                                    color: Colors.grey,
+                                                  ),
+                                                ),
+                                                if (msg.reasoningTimeMs != null) ...[
+                                                   SizedBox(width: 8),
+                                                   Text(
+                                                     '(${msg.reasoningTimeMs! > 1000 ? (msg.reasoningTimeMs! / 1000).toStringAsFixed(1) + "s" : msg.reasoningTimeMs.toString() + "ms"})',
+                                                     style: TextStyle(
+                                                       fontSize: 10,
+                                                       color: Colors.grey,
+                                                     ),
+                                                   ),
+                                                ],
+                                              ],
+                                            ),
+                                            SizedBox(height: 4),
+                                            SelectionArea(
+                                              child: Text(
+                                                msg.reasoningContent!,
+                                                style: TextStyle(
+                                                  //fontStyle: FontStyle.italic,
+                                                  color: isDark ? Colors.white70 : Colors.black87,
+                                                  fontSize: 12,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
                                     SelectionArea(
                                       child: MarkdownBody(data: msg.content),
                                     ),

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
@@ -94,26 +95,106 @@ class ChatProvider with ChangeNotifier {
       int assistantMsgIndex = _messages.length - 1;
       notifyListeners();
 
+      final stopwatch = Stopwatch()..start();
+      bool isThinking = true;
+      Timer? timer;
+
+      // Start a timer to update reasoning time periodically
+      timer = Timer.periodic(Duration(milliseconds: 100), (t) {
+        if (!isThinking) {
+          t.cancel();
+          return;
+        }
+        
+        // Update reasoning time in UI even if no new content
+        final currentMsg = _messages[assistantMsgIndex];
+        // Only update if we have started reasoning (i.e. reasoningContent is not null/empty) 
+        // OR if we assume initial state is reasoning (which we do for now for models that support it)
+        // Actually, better to wait until we receive the first chunk of reasoning or content?
+        // But the user wants "autonomous refresh", implying we should see the timer count up.
+        // Let's update only if we have at least some reasoning content OR we are waiting.
+        // But modifying _messages triggers rebuild.
+        
+        if (currentMsg.reasoningContent != null && currentMsg.reasoningContent!.isNotEmpty) {
+           _messages[assistantMsgIndex] = Message(
+              role: 'assistant',
+              content: currentMsg.content,
+              reasoningContent: currentMsg.reasoningContent,
+              reasoningTimeMs: stopwatch.elapsedMilliseconds,
+              conversationId: _currentConversation!.id
+           );
+           notifyListeners();
+        }
+      });
+
       streamResponse.stream
           .transform(utf8.decoder)
           .transform(const LineSplitter())
           .listen((line) {
         if (line.startsWith('data: ')) {
           final data = line.substring(6).trim();
-          if (data == '[DONE]') return;
+          if (data == '[DONE]') {
+             // Stop timer if done
+             if (isThinking) {
+                stopwatch.stop();
+                isThinking = false;
+                timer?.cancel();
+             }
+             return;
+          }
 
           try {
             final json = jsonDecode(data);
             if (json['choices'] != null && (json['choices'] as List).isNotEmpty) {
               final delta = json['choices'][0]['delta'];
-              if (delta != null && delta['content'] != null) {
+              if (delta != null) {
                 final content = delta['content'];
-                _messages[assistantMsgIndex] = Message(
-                  role: 'assistant', 
-                  content: _messages[assistantMsgIndex].content + content,
-                  conversationId: _currentConversation!.id
-                );
-                notifyListeners();
+                final reasoning = delta['reasoning_content'];
+                
+                // If we receive content, it means reasoning might be over or interleaved
+                // But usually reasoning comes first. 
+                // Let's stop timer when we first receive real content if reasoning was happening.
+                // However, deepseek sometimes interleaves. 
+                // A simple heuristic: if we have reasoning content, update time.
+                // If we get content, we don't necessarily stop counting reasoning time if reasoning continues.
+                // BUT, typically reasoning happens before content.
+                // Let's track if we are currently receiving reasoning.
+                
+                if (content != null && content.isNotEmpty && isThinking && (reasoning == null || reasoning.isEmpty)) {
+                   isThinking = false;
+                   stopwatch.stop();
+                   timer?.cancel();
+                }
+
+                if (content != null || reasoning != null) {
+                  final currentMsg = _messages[assistantMsgIndex];
+                  
+                  // Update reasoning time only if we are still in thinking phase or just finished
+                  int? reasoningTime;
+                  // If currently reasoning (or just finished), update time.
+                  // If we already stopped thinking, use the stored time (from currentMsg) or final stopwatch time?
+                  // Using stopwatch.elapsedMilliseconds is safer if isThinking was true.
+                  
+                  if (currentMsg.reasoningContent != null || reasoning != null) {
+                      // If we are thinking, use current elapsed. 
+                      // If we stopped thinking (isThinking=false), we should probably keep the last time.
+                      // But here we are inside the stream loop.
+                      if (isThinking) {
+                         reasoningTime = stopwatch.elapsedMilliseconds;
+                      } else {
+                         reasoningTime = currentMsg.reasoningTimeMs;
+                      }
+                  }
+                  
+                  _messages[assistantMsgIndex] = Message(
+                    role: 'assistant', 
+                    content: currentMsg.content + (content ?? ''),
+                    reasoningContent: (currentMsg.reasoningContent ?? '') + (reasoning ?? ''),
+                    reasoningTimeMs: reasoningTime,
+                    conversationId: _currentConversation!.id
+                  );
+                  notifyListeners();
+                }
               }
             }
           } catch (e) {
@@ -121,6 +202,10 @@ class ChatProvider with ChangeNotifier {
           }
         }
       }, onDone: () {
+        if (isThinking) {
+           stopwatch.stop();
+           timer?.cancel();
+        }
         _isStreaming = false;
         notifyListeners();
       }, onError: (error) {

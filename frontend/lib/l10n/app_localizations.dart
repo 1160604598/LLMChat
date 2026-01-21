@@ -47,6 +47,7 @@ class S {
       'configUpdated': 'Configuration updated',
       'copied': 'Copied to clipboard!',
       'logout': 'Logout',
+      'thinkingProcess': 'Thinking Process',
     },
     'zh': {
       'appTitle': 'LLM 对话',
@@ -80,6 +81,7 @@ class S {
       'modelName': '模型名称',
       'configUpdated': '配置已更新',
       'copied': '已复制到剪贴板!',
+      'thinkingProcess': '深度思考',
     },
   };
 
@@ -123,6 +125,7 @@ class S {
   String get confirmDelete => get('confirmDelete');
   String get areYouSure => get('areYouSure');
   String get logout => get('logout');
+  String get thinkingProcess => get('thinkingProcess');
 }
 
 class AppLocalizationsDelegate extends LocalizationsDelegate<S> {

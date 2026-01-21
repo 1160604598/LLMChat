@@ -126,7 +126,7 @@ async def stream_chat(
                             data = json.loads(data_str)
                             if "choices" in data and len(data["choices"]) > 0:
                                 delta = data["choices"][0].get("delta", {})
-                                if "content" in delta:
+                                if "content" in delta and delta["content"] is not None:
                                     full_response += delta["content"]
                         except json.JSONDecodeError:
                             continue
