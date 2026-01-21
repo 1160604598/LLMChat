@@ -30,11 +30,25 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        create("release") {
+            val keystoreFile = file("upload-keystore.jks")
+            if (keystoreFile.exists()) {
+                storeFile = keystoreFile
+                storePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD") ?: "123456"
+                keyAlias = System.getenv("ANDROID_KEY_ALIAS") ?: "upload"
+                keyPassword = System.getenv("ANDROID_KEY_PASSWORD") ?: "123456"
+            } else {
+                // Fallback or handle missing keystore (e.g., CI might decode it differently)
+                // For now, let's assume if it's missing locally, we might fail or fallback.
+                // But in CI, we will ensure it exists.
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 }
