@@ -57,9 +57,9 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> updateConfig(String? baseUrl, String? apiKey, String? modelName) async {
+  Future<void> updateConfig(String? baseUrl, String? apiKey, String? modelName, String? modelProvider) async {
     try {
-      _user = await _apiService.updateConfig(baseUrl, apiKey, modelName);
+      _user = await _apiService.updateConfig(baseUrl, apiKey, modelName, modelProvider);
       notifyListeners();
     } catch (e) {
       rethrow;

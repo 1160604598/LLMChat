@@ -15,6 +15,7 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> {
   final _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  final FocusNode _focusNode = FocusNode();
   bool _showScrollToBottomButton = false;
   bool _isFollowingBottom = true;
 
@@ -29,6 +30,7 @@ class _ChatScreenState extends State<ChatScreen> {
   void dispose() {
     _scrollController.dispose();
     _messageController.dispose();
+    _focusNode.dispose();
     super.dispose();
   }
 
@@ -266,22 +268,21 @@ class _ChatScreenState extends State<ChatScreen> {
                                               ],
                                             ),
                                             SizedBox(height: 4),
-                                            SelectionArea(
-                                              child: Text(
-                                                msg.reasoningContent!,
-                                                style: TextStyle(
-                                                  //fontStyle: FontStyle.italic,
-                                                  color: isDark ? Colors.white70 : Colors.black87,
-                                                  fontSize: 12,
-                                                ),
+                                            SelectableText(
+                                              msg.reasoningContent!,
+                                              style: TextStyle(
+                                                //fontStyle: FontStyle.italic,
+                                                color: isDark ? Colors.white70 : Colors.black87,
+                                                fontSize: 12,
                                               ),
                                             ),
                                           ],
                                         ),
                                       ),
                                     ],
-                                    SelectionArea(
-                                      child: MarkdownBody(data: msg.content),
+                                    MarkdownBody(
+                                      data: msg.content,
+                                      selectable: true,
                                     ),
                                     if (!isUser) ...[
                                       SizedBox(height: 8),
@@ -333,6 +334,8 @@ class _ChatScreenState extends State<ChatScreen> {
                 Expanded(
                   child: TextField(
                     controller: _messageController,
+                    focusNode: _focusNode,
+                    autofocus: true,
                     decoration: InputDecoration(
                       hintText: S.of(context).typeMessage,
                       border: OutlineInputBorder(),

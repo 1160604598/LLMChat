@@ -61,6 +61,7 @@ async def stream_chat(
     base_url = request.llm_config.model_base_url if request.llm_config and request.llm_config.model_base_url else current_user.model_base_url
     api_key = request.llm_config.model_api_key if request.llm_config and request.llm_config.model_api_key else current_user.model_api_key
     model_name = request.llm_config.model_name if request.llm_config and request.llm_config.model_name else current_user.model_name
+    model_provider = request.llm_config.model_provider if request.llm_config and request.llm_config.model_provider else current_user.model_provider
 
     if not base_url:
          raise HTTPException(status_code=400, detail="Model Base URL not configured")
@@ -98,7 +99,7 @@ async def stream_chat(
 
     async def event_generator():
         full_response = ""
-        client = httpx.AsyncClient(timeout=60.0)
+        client = httpx.AsyncClient(timeout=600.0)
         try:
             # Handle potential trailing slash in base_url
             url = f"{base_url.rstrip('/')}/chat/completions"

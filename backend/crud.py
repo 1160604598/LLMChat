@@ -22,6 +22,8 @@ def update_user_config(db: Session, user: models.User, config: schemas.UserUpdat
         user.model_api_key = config.model_api_key
     if config.model_name is not None:
         user.model_name = config.model_name
+    if config.model_provider is not None:
+        user.model_provider = config.model_provider
     db.commit()
     db.refresh(user)
     return user

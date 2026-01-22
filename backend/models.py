@@ -15,6 +15,7 @@ class User(Base):
     model_base_url = Column(String, default="https://api.openai.com/v1")
     model_api_key = Column(String, default="")
     model_name = Column(String, default="gpt-3.5-turbo")
+    model_provider = Column(String, default="OpenAI")
 
     conversations = relationship("Conversation", back_populates="owner")
 

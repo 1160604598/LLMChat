@@ -4,6 +4,7 @@ class User {
   final String? modelBaseUrl;
   final String? modelApiKey;
   final String? modelName;
+  final String? modelProvider;
 
   User({
     required this.id,
@@ -11,6 +12,7 @@ class User {
     this.modelBaseUrl,
     this.modelApiKey,
     this.modelName,
+    this.modelProvider,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
@@ -20,6 +22,7 @@ class User {
       modelBaseUrl: json['model_base_url'],
       modelApiKey: json['model_api_key'],
       modelName: json['model_name'],
+      modelProvider: json['model_provider'],
     );
   }
 }

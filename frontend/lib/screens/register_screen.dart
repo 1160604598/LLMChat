@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import '../l10n/app_localizations.dart';
 
 class RegisterScreen extends StatefulWidget {
   @override
@@ -16,7 +17,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final authProvider = Provider.of<AuthProvider>(context);
 
     return Scaffold(
-      appBar: AppBar(title: Text('Register')),
+      appBar: AppBar(title: Text(S.of(context).register)),
       body: Padding(
         padding: EdgeInsets.all(16.0),
         child: Column(
@@ -24,11 +25,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
           children: [
             TextField(
               controller: _usernameController,
-              decoration: InputDecoration(labelText: 'Username'),
+              decoration: InputDecoration(labelText: S.of(context).username),
             ),
             TextField(
               controller: _passwordController,
-              decoration: InputDecoration(labelText: 'Password'),
+              decoration: InputDecoration(labelText: S.of(context).password),
               obscureText: true,
             ),
             SizedBox(height: 20),
@@ -43,15 +44,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         );
                         Navigator.pop(context);
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Registration successful, please login')),
+                          SnackBar(content: Text(S.of(context).registrationSuccessful)),
                         );
                       } catch (e) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Registration Failed: $e')),
+                          SnackBar(content: Text('${S.of(context).registrationFailed}: $e')),
                         );
                       }
                     },
-                    child: Text('Register'),
+                    child: Text(S.of(context).register),
                   ),
           ],
         ),

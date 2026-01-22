@@ -13,6 +13,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final _baseUrlController = TextEditingController();
   final _apiKeyController = TextEditingController();
   final _modelNameController = TextEditingController();
+  String _selectedProvider = 'OpenAI';
 
   @override
   void initState() {
@@ -22,6 +23,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _baseUrlController.text = user.modelBaseUrl ?? '';
       _apiKeyController.text = user.modelApiKey ?? '';
       _modelNameController.text = user.modelName ?? '';
+      _selectedProvider = user.modelProvider ?? 'OpenAI';
     }
   }
 
@@ -75,6 +77,37 @@ class _SettingsScreenState extends State<SettingsScreen> {
             SizedBox(height: 10),
 
             Text(S.of(context).modelConfig, style: Theme.of(context).textTheme.titleMedium),
+            DropdownButton<String>(
+              value: _selectedProvider,
+              isExpanded: true,
+              onChanged: (String? newValue) {
+                if (newValue != null) {
+                  setState(() {
+                    _selectedProvider = newValue;
+                    if (_selectedProvider == 'Ollama') {
+                      if (_baseUrlController.text.isEmpty || _baseUrlController.text.contains('api.openai.com')) {
+                        _baseUrlController.text = 'http://localhost:11434/v1';
+                      }
+                    } else if (_selectedProvider == 'OpenAI') {
+                      if (_baseUrlController.text.isEmpty || _baseUrlController.text.contains('localhost')) {
+                        _baseUrlController.text = 'https://api.openai.com/v1';
+                      }
+                    } else if (_selectedProvider == 'DeepSeek') {
+                      if (_baseUrlController.text.isEmpty || _baseUrlController.text.contains('api.openai.com')) {
+                        _baseUrlController.text = 'https://api.deepseek.com';
+                      }
+                    }
+                  });
+                }
+              },
+              items: [
+                DropdownMenuItem(value: 'OpenAI', child: Text(S.of(context).providerOpenAI)),
+                DropdownMenuItem(value: 'Ollama', child: Text(S.of(context).providerOllama)),
+                DropdownMenuItem(value: 'DeepSeek', child: Text(S.of(context).providerDeepSeek)),
+                DropdownMenuItem(value: 'Zhipu', child: Text(S.of(context).providerZhipu)),
+                DropdownMenuItem(value: 'Other', child: Text(S.of(context).providerOther)),
+              ],
+            ),
             TextField(
               controller: _baseUrlController,
               decoration: InputDecoration(labelText: S.of(context).baseUrl, hintText: 'https://api.openai.com/v1'),
@@ -97,13 +130,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       _baseUrlController.text,
                       _apiKeyController.text,
                       _modelNameController.text,
+                      _selectedProvider,
                     );
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text(S.of(context).configUpdated)),
                     );
                   } catch (e) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Failed to save settings: $e')),
+                      SnackBar(content: Text('${S.of(context).saveSettingsFailed}: $e')),
                     );
                   }
                 },

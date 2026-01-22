@@ -88,7 +88,7 @@ class ApiService {
     }
   }
 
-  Future<User> updateConfig(String? baseUrlStr, String? apiKey, String? modelName) async {
+  Future<User> updateConfig(String? baseUrlStr, String? apiKey, String? modelName, String? modelProvider) async {
     final token = await getToken();
     final response = await http.put(
       Uri.parse('$baseUrl/auth/config'),
@@ -100,6 +100,7 @@ class ApiService {
         'model_base_url': baseUrlStr,
         'model_api_key': apiKey,
         'model_name': modelName,
+        'model_provider': modelProvider,
       }),
     );
 

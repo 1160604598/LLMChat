@@ -15,7 +15,7 @@ class Message(MessageBase):
     conversation_id: int
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class ConversationBase(BaseModel):
     title: str
@@ -30,7 +30,7 @@ class Conversation(ConversationBase):
     messages: List[Message] = []
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class UserBase(BaseModel):
     username: str
@@ -42,16 +42,18 @@ class UserUpdateConfig(BaseModel):
     model_base_url: Optional[str] = None
     model_api_key: Optional[str] = None
     model_name: Optional[str] = None
+    model_provider: Optional[str] = None
 
 class User(UserBase):
     id: int
     model_base_url: Optional[str]
     model_api_key: Optional[str]
     model_name: Optional[str]
+    model_provider: Optional[str]
     conversations: List[Conversation] = []
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class Token(BaseModel):
     access_token: str

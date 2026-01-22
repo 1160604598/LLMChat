@@ -44,9 +44,19 @@ class S {
       'baseUrl': 'Base URL',
       'apiKey': 'API Key',
       'modelName': 'Model Name',
+      'modelProvider': 'Model Provider',
+      'providerOpenAI': 'OpenAI',
+      'providerOllama': 'Ollama',
+      'providerDeepSeek': 'DeepSeek',
+      'providerZhipu': 'Zhipu AI',
+      'providerOther': 'Other',
       'configUpdated': 'Configuration updated',
       'copied': 'Copied to clipboard!',
       'logout': 'Logout',
+      'saveSettingsFailed': 'Failed to save settings',
+      'delete': 'Delete',
+      'confirmDelete': 'Delete Conversation',
+      'areYouSure': 'Are you sure you want to delete this conversation?',
       'thinkingProcess': 'Thinking Process',
     },
     'zh': {
@@ -79,8 +89,19 @@ class S {
       'baseUrl': 'API 地址 (Base URL)',
       'apiKey': 'API 密钥 (Key)',
       'modelName': '模型名称',
+      'modelProvider': '模型供应商',
+      'providerOpenAI': 'OpenAI',
+      'providerOllama': 'Ollama',
+      'providerDeepSeek': 'DeepSeek',
+      'providerZhipu': '智谱AI',
+      'providerOther': 'Other',
       'configUpdated': '配置已更新',
       'copied': '已复制到剪贴板!',
+      'delete': '删除',
+      'confirmDelete': '删除对话',
+      'areYouSure': '确定要删除此对话吗？',
+      'logout': '注销',
+      'saveSettingsFailed': '保存设置失败',
       'thinkingProcess': '深度思考',
     },
   };
@@ -119,12 +140,19 @@ class S {
   String get baseUrl => get('baseUrl');
   String get apiKey => get('apiKey');
   String get modelName => get('modelName');
+  String get modelProvider => get('modelProvider');
+  String get providerOpenAI => get('providerOpenAI');
+  String get providerOllama => get('providerOllama');
+  String get providerDeepSeek => get('providerDeepSeek');
+  String get providerZhipu => get('providerZhipu');
+  String get providerOther => get('providerOther');
   String get configUpdated => get('configUpdated');
   String get copied => get('copied');
   String get delete => get('delete');
   String get confirmDelete => get('confirmDelete');
   String get areYouSure => get('areYouSure');
   String get logout => get('logout');
+  String get saveSettingsFailed => get('saveSettingsFailed');
   String get thinkingProcess => get('thinkingProcess');
 }
 
