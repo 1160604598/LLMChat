@@ -23,7 +23,7 @@ import os
 import sys
 
 # Default Port
-PORT = 8080
+PORT = 9000
 
 # Web Root Directory
 if getattr(sys, 'frozen', False):

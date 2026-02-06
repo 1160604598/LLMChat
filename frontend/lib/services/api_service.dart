@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../models/user.dart';
 import '../models/conversation.dart';
 import '../models/message.dart';
@@ -9,6 +10,7 @@ class ApiService {
   static const String defaultBaseUrl = 'http://127.0.0.1:8000';
   static String baseUrl = defaultBaseUrl;
   static Function()? onTokenExpired;
+  static const _storage = FlutterSecureStorage();
 
   static Future<void> init() async {
     final prefs = await SharedPreferences.getInstance();
@@ -23,18 +25,15 @@ class ApiService {
   }
 
   Future<String?> getToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('access_token');
+    return await _storage.read(key: 'access_token');
   }
 
   Future<void> setToken(String token) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('access_token', token);
+    await _storage.write(key: 'access_token', value: token);
   }
 
   Future<void> logout() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('access_token');
+    await _storage.delete(key: 'access_token');
   }
 
   Future<User> register(String username, String password) async {

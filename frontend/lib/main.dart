@@ -9,8 +9,10 @@ import 'screens/chat_screen.dart';
 import 'l10n/app_localizations.dart';
 
 import 'services/api_service.dart';
+import 'utils/ignore_ssl.dart';
 
 void main() async {
+  ignoreSSLErrors();
   WidgetsFlutterBinding.ensureInitialized();
   await ApiService.init();
   runApp(MyApp());
