@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import '../providers/chat_provider.dart';
 import '../providers/auth_provider.dart';
+import '../models/user.dart';
 import 'settings_screen.dart';
 import '../l10n/app_localizations.dart';
 
@@ -113,6 +114,50 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
+  void _showModelSelectionSheet(BuildContext context, List<ModelConfig> configs, ChatProvider chatProvider) {
+    showModalBottomSheet(
+      context: context,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) {
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Text(
+                S.of(context).modelConfig,
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ),
+            Divider(height: 1),
+            Flexible(
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: configs.length,
+                itemBuilder: (context, index) {
+                  final config = configs[index];
+                  final isSelected = chatProvider.selectedModelConfig?.id == config.id;
+                  return ListTile(
+                    leading: isSelected ? Icon(Icons.check, color: Theme.of(context).primaryColor) : SizedBox(width: 24),
+                    title: Text(config.name),
+                    selected: isSelected,
+                    onTap: () {
+                      chatProvider.selectModelConfig(config);
+                      Navigator.pop(context);
+                    },
+                  );
+                },
+              ),
+            ),
+            SizedBox(height: 16),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final chatProvider = Provider.of<ChatProvider>(context);
@@ -132,6 +177,17 @@ class _ChatScreenState extends State<ChatScreen> {
             builder: (context, authProvider, child) {
               final configs = authProvider.user?.modelConfigs ?? [];
               if (configs.isEmpty) return SizedBox.shrink();
+
+              // Responsive check: Use icon on mobile to save space
+              final isMobile = MediaQuery.of(context).size.width < 600;
+
+              if (isMobile) {
+                return IconButton(
+                  icon: Icon(Icons.smart_toy),
+                  tooltip: S.of(context).modelConfig,
+                  onPressed: () => _showModelSelectionSheet(context, configs, chatProvider),
+                );
+              }
 
               return Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8.0),

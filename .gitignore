@@ -1,2 +1,4 @@
 dist/sql_app.db
 sql_app.db
+dist/DefaultUserModelsConfig.json
+DefaultUserModelsConfig.json
