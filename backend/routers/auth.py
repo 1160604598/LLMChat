@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from datetime import timedelta
+from typing import List
 from .. import crud, models, schemas, auth
 
 router = APIRouter(
@@ -42,3 +43,46 @@ async def update_config(
     db: Session = Depends(auth.get_db)
 ):
     return crud.update_user_config(db, current_user, config)
+
+@router.post("/models", response_model=schemas.ModelConfig)
+def create_model_config(
+    config: schemas.ModelConfigCreate,
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(auth.get_db)
+):
+    return crud.create_model_config(db, config, current_user.id)
+
+@router.get("/models", response_model=List[schemas.ModelConfig])
+def get_model_configs(
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(auth.get_db)
+):
+    return crud.get_model_configs(db, current_user.id)
+
+@router.put("/models/reorder", response_model=List[schemas.ModelConfig])
+def reorder_model_configs(
+    orders: List[schemas.ModelConfigOrder],
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(auth.get_db)
+):
+    return crud.update_model_config_orders(db, orders, current_user.id)
+
+@router.put("/models/{config_id}", response_model=schemas.ModelConfig)
+def update_model_config(
+    config_id: int,
+    config: schemas.ModelConfigCreate,
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(auth.get_db)
+):
+    db_config = crud.update_model_config(db, config_id, config, current_user.id)
+    if not db_config:
+        raise HTTPException(status_code=404, detail="Config not found")
+    return db_config
+
+@router.delete("/models/{config_id}", response_model=schemas.ModelConfig)
+def delete_model_config(
+    config_id: int,
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(auth.get_db)
+):
+    return crud.delete_model_config(db, config_id, current_user.id)

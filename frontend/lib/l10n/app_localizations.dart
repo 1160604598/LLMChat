@@ -58,6 +58,10 @@ class S {
       'confirmDelete': 'Delete Conversation',
       'areYouSure': 'Are you sure you want to delete this conversation?',
       'thinkingProcess': 'Thinking Process',
+      'addModel': 'Add Model',
+      'editModel': 'Edit Model',
+      'configName': 'Config Name',
+      'noModelConfig': 'No model configurations',
     },
     'zh': {
       'appTitle': 'LLM 对话',
@@ -98,11 +102,15 @@ class S {
       'configUpdated': '配置已更新',
       'copied': '已复制到剪贴板!',
       'delete': '删除',
-      'confirmDelete': '删除对话',
+      'addModel': '添加模型',
+      'editModel': '编辑模型',
+      'configName': '配置名称',
+      'confirmDelete': '删除会话',
       'areYouSure': '确定要删除此对话吗？',
       'logout': '注销',
       'saveSettingsFailed': '保存设置失败',
       'thinkingProcess': '深度思考',
+      'noModelConfig': '暂无模型配置',
     },
   };
 
@@ -154,6 +162,10 @@ class S {
   String get logout => get('logout');
   String get saveSettingsFailed => get('saveSettingsFailed');
   String get thinkingProcess => get('thinkingProcess');
+  String get addModel => get('addModel');
+  String get editModel => get('editModel');
+  String get configName => get('configName');
+  String get noModelConfig => get('noModelConfig');
 }
 
 class AppLocalizationsDelegate extends LocalizationsDelegate<S> {

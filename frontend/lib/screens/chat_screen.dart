@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import '../providers/chat_provider.dart';
+import '../providers/auth_provider.dart';
 import 'settings_screen.dart';
 import '../l10n/app_localizations.dart';
 
@@ -127,6 +128,46 @@ class _ChatScreenState extends State<ChatScreen> {
       appBar: AppBar(
         title: Text(chatProvider.currentConversation?.title ?? S.of(context).newChat),
         actions: [
+          Consumer<AuthProvider>(
+            builder: (context, authProvider, child) {
+              final configs = authProvider.user?.modelConfigs ?? [];
+              if (configs.isEmpty) return SizedBox.shrink();
+
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<int>(
+                    value: chatProvider.selectedModelConfig?.id,
+                    hint: Text(S.of(context).modelConfig, style: TextStyle(color: Colors.white70, fontSize: 12)),
+                    icon: Icon(Icons.arrow_drop_down, color: Colors.white),
+                    dropdownColor: Theme.of(context).cardColor,
+                    onChanged: (int? newValue) {
+                      if (newValue != null) {
+                        final config = configs.firstWhere((c) => c.id == newValue);
+                        chatProvider.selectModelConfig(config);
+                      }
+                    },
+                    selectedItemBuilder: (BuildContext context) {
+                      return configs.map<Widget>((config) {
+                        return Center(
+                          child: Text(
+                            config.name,
+                            style: TextStyle(color: Colors.white),
+                          ),
+                        );
+                      }).toList();
+                    },
+                    items: configs.map((config) {
+                      return DropdownMenuItem<int>(
+                        value: config.id,
+                        child: Text(config.name),
+                      );
+                    }).toList(),
+                  ),
+                ),
+              );
+            },
+          ),
           IconButton(
             icon: Icon(Icons.add),
             onPressed: () {

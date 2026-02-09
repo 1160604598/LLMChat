@@ -19,6 +19,7 @@ class Message(MessageBase):
 
 class ConversationBase(BaseModel):
     title: str
+    model_config_id: Optional[int] = None
 
 class ConversationCreate(ConversationBase):
     pass
@@ -44,6 +45,28 @@ class UserUpdateConfig(BaseModel):
     model_name: Optional[str] = None
     model_provider: Optional[str] = None
 
+class ModelConfigBase(BaseModel):
+    name: str
+    base_url: str
+    api_key: Optional[str] = None
+    model_name: str
+    provider: str
+
+class ModelConfigCreate(ModelConfigBase):
+    pass
+
+class ModelConfig(ModelConfigBase):
+    id: int
+    user_id: int
+    display_order: int = 0
+
+    class Config:
+        from_attributes = True
+
+class ModelConfigOrder(BaseModel):
+    id: int
+    display_order: int
+
 class User(UserBase):
     id: int
     model_base_url: Optional[str]
@@ -51,6 +74,7 @@ class User(UserBase):
     model_name: Optional[str]
     model_provider: Optional[str]
     conversations: List[Conversation] = []
+    model_configs: List[ModelConfig] = []
 
     class Config:
         from_attributes = True

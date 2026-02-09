@@ -26,7 +26,10 @@ class MyApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
-        ChangeNotifierProvider(create: (_) => ChatProvider()),
+        ChangeNotifierProxyProvider<AuthProvider, ChatProvider>(
+          create: (_) => ChatProvider(),
+          update: (_, auth, chat) => chat!..updateAuth(auth),
+        ),
         ChangeNotifierProvider(create: (_) => SettingsProvider()),
       ],
       child: Consumer<SettingsProvider>(
@@ -52,8 +55,8 @@ class MyApp extends StatelessWidget {
               GlobalCupertinoLocalizations.delegate,
             ],
             supportedLocales: const [
-              Locale('en', ''),
-              Locale('zh', ''),
+              Locale('en'),
+              Locale('zh'),
             ],
             home: AuthWrapper(),
           );

@@ -1,0 +1,16 @@
+[
+  {
+    "name": "Qwen/Qwen/Qwen3-0.6B",
+    "base_url": "http://111.111.111.111:30040/v1",
+    "api_key": "",
+    "model_name": "Qwen/Qwen/Qwen3-0.6B",
+    "provider": "OpenAI"
+  },
+  {
+    "name": "Qwen/Qwen3-235B-A22B-Instruct-2507-FP8",
+    "base_url": "http://111.111.111.111:30000/v1",
+    "api_key": "",
+    "model_name": "Qwen/Qwen3-235B-A22B-Instruct-2507-FP8",
+    "provider": "OpenAI"
+  }
+]

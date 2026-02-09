@@ -4,20 +4,49 @@ import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../models/conversation.dart';
 import '../models/message.dart';
+import '../models/user.dart';
+import 'auth_provider.dart';
 
 class ChatProvider with ChangeNotifier {
   final ApiService _apiService = ApiService();
   List<Conversation> _conversations = [];
   List<Message> _messages = [];
   Conversation? _currentConversation;
+  ModelConfig? _selectedModelConfig;
   bool _isLoading = false;
   bool _isStreaming = false;
+  AuthProvider? _authProvider;
+
+  void updateAuth(AuthProvider auth) {
+    _authProvider = auth;
+    
+    if (auth.user != null) {
+      // Validate currently selected config
+      if (_selectedModelConfig != null) {
+        final exists = auth.user!.modelConfigs.any((c) => c.id == _selectedModelConfig!.id);
+        if (!exists) {
+          _selectedModelConfig = null;
+        }
+      }
+
+      // Auto-select first model if none selected and available
+      if (_selectedModelConfig == null && auth.user!.modelConfigs.isNotEmpty) {
+           _selectedModelConfig = auth.user!.modelConfigs.first;
+      }
+    }
+  }
 
   List<Conversation> get conversations => _conversations;
   List<Message> get messages => _messages;
   Conversation? get currentConversation => _currentConversation;
+  ModelConfig? get selectedModelConfig => _selectedModelConfig;
   bool get isLoading => _isLoading;
   bool get isStreaming => _isStreaming;
+
+  void selectModelConfig(ModelConfig? config) {
+    _selectedModelConfig = config;
+    notifyListeners();
+  }
 
   Future<void> loadConversations() async {
     _isLoading = true;
@@ -34,6 +63,25 @@ class ChatProvider with ChangeNotifier {
 
   Future<void> selectConversation(Conversation conversation) async {
     _currentConversation = conversation;
+    
+    // Select model config used in conversation
+    if (conversation.modelConfigId != null && _authProvider != null && _authProvider!.user != null) {
+      try {
+        final config = _authProvider!.user!.modelConfigs.firstWhere((c) => c.id == conversation.modelConfigId);
+        _selectedModelConfig = config;
+      } catch (e) {
+        // Config might be deleted
+        _selectedModelConfig = null;
+      }
+    } else {
+      // Fallback or keep current? 
+      // Requirement: "automatically switch to the model used". 
+      // If none used (old chat), maybe null or default?
+      // Let's reset to null if not found to avoid confusion, or keep default if we want sticky behavior.
+      // But explicit requirement suggests matching history.
+      _selectedModelConfig = null;
+    }
+
     _isLoading = true;
     notifyListeners();
     try {
@@ -49,6 +97,22 @@ class ChatProvider with ChangeNotifier {
   Future<void> createNewConversation() async {
     _currentConversation = null;
     _messages = [];
+    
+    // Default select first model if available
+    if (_authProvider != null && _authProvider!.user != null && _authProvider!.user!.modelConfigs.isNotEmpty) {
+       // If no model selected, or if we want to reset to default?
+       // Requirement: "if models added, should default select a model"
+       // Let's select the first one if _selectedModelConfig is null, OR always reset?
+       // "New conversation" usually implies fresh start. 
+       // If I am in a "GPT-4" chat and click new chat, do I expect "GPT-4" or "Default"?
+       // Usually "Default" or "Last used".
+       // User says: "If added models, should default select a model".
+       // Let's select the first one.
+       if (_selectedModelConfig == null) {
+         _selectedModelConfig = _authProvider!.user!.modelConfigs.first;
+       }
+    }
+    
     notifyListeners();
   }
 
@@ -84,11 +148,11 @@ class ChatProvider with ChangeNotifier {
       if (_currentConversation == null) {
         // Simple title generation
         String title = content.length > 20 ? content.substring(0, 20) + '...' : content;
-        _currentConversation = await _apiService.createConversation(title);
+        _currentConversation = await _apiService.createConversation(title, modelConfigId: _selectedModelConfig?.id);
         _conversations.insert(0, _currentConversation!);
       }
 
-      final streamResponse = await _apiService.streamChat(content, _currentConversation!.id);
+      final streamResponse = await _apiService.streamChat(content, _currentConversation!.id, _selectedModelConfig);
       
       // Add empty assistant message
       _messages.add(Message(role: 'assistant', content: ''));

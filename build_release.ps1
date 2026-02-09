@@ -164,6 +164,15 @@ if ($LASTEXITCODE -eq 0) {
 }
 cd ..
 
+# Copy DefaultUserModelsConfig.json
+$configFile = "$PSScriptRoot\DefaultUserModelsConfig.json"
+if (Test-Path $configFile) {
+    Copy-Item $configFile "$distDir\" -Force
+    Write-Host "Copied DefaultUserModelsConfig.json to dist." -ForegroundColor Green
+} else {
+    Write-Host "Warning: DefaultUserModelsConfig.json not found." -ForegroundColor Yellow
+}
+
 # 4. 创建启动脚本
 Write-Host "`n[3/3] Creating launcher script..." -ForegroundColor Yellow
 $launcherContent = @"

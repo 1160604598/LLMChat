@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -25,14 +26,28 @@ class ApiService {
   }
 
   Future<String?> getToken() async {
+    if (kIsWeb) {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getString('access_token');
+    }
     return await _storage.read(key: 'access_token');
   }
 
   Future<void> setToken(String token) async {
+    if (kIsWeb) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('access_token', token);
+      return;
+    }
     await _storage.write(key: 'access_token', value: token);
   }
 
   Future<void> logout() async {
+    if (kIsWeb) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('access_token');
+      return;
+    }
     await _storage.delete(key: 'access_token');
   }
 
@@ -67,6 +82,29 @@ class ApiService {
     }
   }
 
+  Future<void> reorderModelConfigs(List<ModelConfig> configs) async {
+    final token = await getToken();
+    final List<Map<String, dynamic>> orders = configs.asMap().entries.map((entry) {
+      return {
+        'id': entry.value.id,
+        'display_order': entry.key,
+      };
+    }).toList();
+
+    final response = await http.put(
+      Uri.parse('$baseUrl/auth/models/reorder'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode(orders),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to reorder models: ${response.body}');
+    }
+  }
+
   Future<User> getCurrentUser() async {
     final token = await getToken();
     if (token == null) throw Exception('Not authenticated');
@@ -87,30 +125,53 @@ class ApiService {
     }
   }
 
-  Future<User> updateConfig(String? baseUrlStr, String? apiKey, String? modelName, String? modelProvider) async {
+  Future<ModelConfig> addModelConfig(ModelConfig config) async {
     final token = await getToken();
-    final response = await http.put(
-      Uri.parse('$baseUrl/auth/config'),
+    final response = await http.post(
+      Uri.parse('$baseUrl/auth/models'),
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
       },
-      body: jsonEncode({
-        'model_base_url': baseUrlStr,
-        'model_api_key': apiKey,
-        'model_name': modelName,
-        'model_provider': modelProvider,
-      }),
+      body: jsonEncode(config.toJson()),
     );
 
-    if (response.statusCode == 401) {
-      onTokenExpired?.call();
+    if (response.statusCode == 200) {
+      return ModelConfig.fromJson(jsonDecode(response.body));
+    } else {
+      throw Exception('Failed to add model config: ${response.body}');
     }
+  }
+
+  Future<ModelConfig> updateModelConfig(ModelConfig config) async {
+    final token = await getToken();
+    final response = await http.put(
+      Uri.parse('$baseUrl/auth/models/${config.id}'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode(config.toJson()),
+    );
 
     if (response.statusCode == 200) {
-      return User.fromJson(jsonDecode(response.body));
+      return ModelConfig.fromJson(jsonDecode(response.body));
     } else {
-      throw Exception('Failed to update config');
+      throw Exception('Failed to update model config: ${response.body}');
+    }
+  }
+
+  Future<void> deleteModelConfig(int id) async {
+    final token = await getToken();
+    final response = await http.delete(
+      Uri.parse('$baseUrl/auth/models/$id'),
+      headers: {
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to delete model config: ${response.body}');
     }
   }
 
@@ -133,7 +194,7 @@ class ApiService {
     }
   }
 
-  Future<Conversation> createConversation(String title) async {
+  Future<Conversation> createConversation(String title, {int? modelConfigId}) async {
     final token = await getToken();
     final response = await http.post(
       Uri.parse('$baseUrl/chat/conversations'),
@@ -141,7 +202,10 @@ class ApiService {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
       },
-      body: jsonEncode({'title': title}),
+      body: jsonEncode({
+        'title': title,
+        'model_config_id': modelConfigId,
+      }),
     );
 
     if (response.statusCode == 401) {
@@ -191,15 +255,27 @@ class ApiService {
     }
   }
 
-  Future<http.StreamedResponse> streamChat(String message, int? conversationId) async {
+  Future<http.StreamedResponse> streamChat(String message, int? conversationId, [ModelConfig? config]) async {
     final token = await getToken();
     final request = http.Request('POST', Uri.parse('$baseUrl/chat/stream'));
     request.headers['Authorization'] = 'Bearer $token';
     request.headers['Content-Type'] = 'application/json';
-    request.body = jsonEncode({
+    
+    final Map<String, dynamic> body = {
       'message': message,
       'conversation_id': conversationId,
-    });
+    };
+
+    if (config != null) {
+      body['model_config'] = {
+        'model_base_url': config.baseUrl,
+        'model_api_key': config.apiKey,
+        'model_name': config.modelName,
+        'model_provider': config.provider,
+      };
+    }
+
+    request.body = jsonEncode(body);
 
     final response = await request.send();
     if (response.statusCode == 401) {

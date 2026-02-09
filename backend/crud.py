@@ -1,5 +1,7 @@
 from sqlalchemy.orm import Session
 from . import models, schemas, auth
+import os
+import json
 
 def get_user(db: Session, user_id: int):
     return db.query(models.User).filter(models.User.id == user_id).first()
@@ -13,6 +15,31 @@ def create_user(db: Session, user: schemas.UserCreate):
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
+
+    # Check for DefaultUserModelsConfig.json
+    config_path = "DefaultUserModelsConfig.json"
+    if os.path.exists(config_path):
+        try:
+            with open(config_path, 'r', encoding='utf-8') as f:
+                configs = json.load(f)
+                if isinstance(configs, list):
+                    for config_data in configs:
+                        # Create model config from file data
+                        # We map fields directly. Ensure JSON keys match model attributes or schema.
+                        new_config = models.ModelConfig(
+                            user_id=db_user.id,
+                            name=config_data.get('name', 'Default'),
+                            base_url=config_data.get('base_url', ''),
+                            api_key=config_data.get('api_key', ''),
+                            model_name=config_data.get('model_name', ''),
+                            provider=config_data.get('provider', 'Other')
+                        )
+                        db.add(new_config)
+                    db.commit()
+                    # db.refresh(db_user) # Not strictly necessary unless we access db_user.model_configs immediately
+        except Exception as e:
+            print(f"Error loading default model configs: {e}")
+
     return db_user
 
 def update_user_config(db: Session, user: models.User, config: schemas.UserUpdateConfig):
@@ -57,3 +84,41 @@ def create_message(db: Session, message: schemas.MessageCreate, conversation_id:
 
 def get_messages(db: Session, conversation_id: int):
     return db.query(models.Message).filter(models.Message.conversation_id == conversation_id).all()
+
+def create_model_config(db: Session, config: schemas.ModelConfigCreate, user_id: int):
+    db_config = models.ModelConfig(**config.dict(), user_id=user_id)
+    db.add(db_config)
+    db.commit()
+    db.refresh(db_config)
+    return db_config
+
+def get_model_configs(db: Session, user_id: int):
+    return db.query(models.ModelConfig).filter(models.ModelConfig.user_id == user_id).order_by(models.ModelConfig.display_order.asc(), models.ModelConfig.id.asc()).all()
+
+def update_model_config(db: Session, config_id: int, config: schemas.ModelConfigCreate, user_id: int):
+    db_config = db.query(models.ModelConfig).filter(models.ModelConfig.id == config_id, models.ModelConfig.user_id == user_id).first()
+    if db_config:
+        db_config.name = config.name
+        db_config.base_url = config.base_url
+        db_config.api_key = config.api_key
+        db_config.model_name = config.model_name
+        db_config.provider = config.provider
+        db.commit()
+        db.refresh(db_config)
+    return db_config
+
+def delete_model_config(db: Session, config_id: int, user_id: int):
+    db_config = db.query(models.ModelConfig).filter(models.ModelConfig.id == config_id, models.ModelConfig.user_id == user_id).first()
+    if db_config:
+        db.delete(db_config)
+        db.commit()
+    return db_config
+
+def update_model_config_orders(db: Session, orders: list[schemas.ModelConfigOrder], user_id: int):
+    # This could be optimized, but loop is fine for small number of configs
+    for order in orders:
+        db_config = db.query(models.ModelConfig).filter(models.ModelConfig.id == order.id, models.ModelConfig.user_id == user_id).first()
+        if db_config:
+            db_config.display_order = order.display_order
+    db.commit()
+    return get_model_configs(db, user_id)

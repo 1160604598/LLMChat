@@ -57,11 +57,24 @@ async def stream_chat(
     db: Session = Depends(auth.get_db),
     current_user: models.User = Depends(auth.get_current_user)
 ):
-    # Determine config (use request config if provided, else user config)
-    base_url = request.llm_config.model_base_url if request.llm_config and request.llm_config.model_base_url else current_user.model_base_url
-    api_key = request.llm_config.model_api_key if request.llm_config and request.llm_config.model_api_key else current_user.model_api_key
-    model_name = request.llm_config.model_name if request.llm_config and request.llm_config.model_name else current_user.model_name
-    model_provider = request.llm_config.model_provider if request.llm_config and request.llm_config.model_provider else current_user.model_provider
+    # Determine config
+    # If llm_config is present, we use it. We assume the client sends a complete valid config or nothing.
+    # Note: request.llm_config is a Pydantic model UserUpdateConfig where fields are Optional.
+    # But when selecting a specific model config in frontend, we send all fields.
+    
+    if request.llm_config:
+        # Use request config, defaulting to None/Empty if missing in the request object (but keys should be there)
+        # We assume the user wants to use EXACTLY what's in llm_config
+        base_url = request.llm_config.model_base_url
+        api_key = request.llm_config.model_api_key
+        model_name = request.llm_config.model_name
+        model_provider = request.llm_config.model_provider
+    else:
+        # Fallback to user default config
+        base_url = current_user.model_base_url
+        api_key = current_user.model_api_key
+        model_name = current_user.model_name
+        model_provider = current_user.model_provider
 
     if not base_url:
          raise HTTPException(status_code=400, detail="Model Base URL not configured")

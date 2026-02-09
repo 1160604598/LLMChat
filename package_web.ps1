@@ -5,6 +5,23 @@ if (Test-Path $releaseDir) {
 }
 New-Item -ItemType Directory -Path $releaseDir | Out-Null
 
+# 0. 构建 Web 前端
+Write-Host "Building Flutter Web App..." -ForegroundColor Cyan
+Push-Location "frontend"
+if (Get-Command "flutter" -ErrorAction SilentlyContinue) {
+    cmd /c "flutter build web --release"
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Error: Flutter build failed." -ForegroundColor Red
+        Pop-Location
+        exit 1
+    }
+} else {
+    Write-Host "Error: Flutter command not found. Please install Flutter." -ForegroundColor Red
+    Pop-Location
+    exit 1
+}
+Pop-Location
+
 # 1. 复制 Web 前端文件
 $webSource = "frontend/build/web"
 if (-not (Test-Path $webSource)) {

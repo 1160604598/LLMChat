@@ -18,12 +18,13 @@
     *   **服务地址**: 登录界面可动态配置后端服务器地址，方便远程连接。
     *   **个性化**: 支持中英文切换及明暗主题模式。
 *   **📦 绿色免安装**: Windows 版本打包为便携式文件夹，内置所有运行环境。
+*   **🌐 全平台支持**: 支持 Windows, Android 和 Web 平台。
 
 ## 🏗️ 架构
 
 - **后端**: Python FastAPI (异步处理, SQLAlchemy ORM, Pydantic)
 - **数据库**: SQLite (轻量级本地存储)
-- **前端**: Flutter (Windows Desktop, Provider 状态管理, Material 3 设计)
+- **前端**: Flutter (Windows Desktop, Web, Android, Provider 状态管理, Material 3 设计)
 
 ## 🚀 快速开始 (Windows Release)
 
@@ -64,7 +65,7 @@ flutter run -d windows
 
 ### 3. 打包发布 (Build for Release)
 
-本项目支持构建 Windows 桌面版和 Android 移动版。
+本项目支持构建 Windows 桌面版、Android 移动版和 Web 网页版。
 
 #### Windows 桌面版
 本项目提供了一键打包脚本，可生成无需安装环境的绿色版程序。
@@ -104,6 +105,22 @@ flutter build apk --release
 ```
 生成的 APK 位于: `frontend/build/app/outputs/flutter-apk/app-release.apk`
 
+#### Web 网页版
+提供一键打包脚本，构建 Flutter Web 前端并生成轻量级 Python Web Server。
+
+**构建步骤**:
+在 PowerShell 中运行：
+```powershell
+.\package_web.ps1
+```
+
+**产物说明**:
+脚本运行成功后，会在 `web_release/` 目录下生成：
+- `www/`: 编译后的 Flutter Web 静态资源。
+- `start_web_client.exe`: 打包后的 Web 服务器（无需 Python 环境即可运行）。
+- `start_web_client.py`: Web 服务器源码。
+
+双击 `start_web_client.exe` 即可启动 Web 客户端（默认端口 9000）。
 
 ## ⚙️ 使用说明
 
@@ -113,6 +130,7 @@ flutter build apk --release
     *   **Base URL**: 例如 `https://api.openai.com/v1` 或本地 `http://localhost:11434/v1`
     *   **API Key**: 你的 API 密钥
     *   **Model Name**: 模型名称（如 `gpt-4`, `llama3`）
+3.  **预设模型配置**: 可以在项目根目录创建 `DefaultUserModelsConfig.json` 文件，新注册的用户将自动继承该文件中的模型配置列表。
 
 ### 常见问题
 *   **注册失败**: 确保后端服务已启动且数据库文件 (`sql_app.db`) 有写入权限。
