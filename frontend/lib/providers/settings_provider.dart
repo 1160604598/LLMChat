@@ -1,15 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../services/update_service.dart';
 
 class SettingsProvider with ChangeNotifier {
   ThemeMode _themeMode = ThemeMode.system;
   Locale _locale = const Locale('en');
+  UpdateInfo? _updateInfo;
 
   ThemeMode get themeMode => _themeMode;
   Locale get locale => _locale;
+  UpdateInfo? get updateInfo => _updateInfo;
+  bool get hasUpdate => _updateInfo != null;
+
+  final UpdateService _updateService = UpdateService();
 
   SettingsProvider() {
     _loadSettings();
+    checkForUpdate(); // Check on startup
+  }
+
+  Future<void> checkForUpdate() async {
+    _updateInfo = await _updateService.checkUpdate();
+    notifyListeners();
   }
 
   Future<void> _loadSettings() async {

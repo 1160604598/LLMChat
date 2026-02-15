@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'dart:io';
+import 'package:package_info_plus/package_info_plus.dart';
 import '../providers/auth_provider.dart';
 import '../providers/settings_provider.dart';
+import '../services/update_service.dart'; // Need UpdateInfo
 import '../l10n/app_localizations.dart';
 import '../models/user.dart';
 
@@ -124,6 +127,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 Text(S.of(context).noModelConfig, style: TextStyle(color: Colors.grey)),
 
             SizedBox(height: 20),
+            Divider(),
+            ListTile(
+              leading: Icon(Icons.info_outline),
+              title: Text(S.of(context).about),
+              trailing: settingsProvider.hasUpdate
+                  ? Container(
+                      width: 10,
+                      height: 10,
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
+                      ),
+                    )
+                  : null,
+              onTap: () => _showAboutDialog(context, settingsProvider),
+            ),
+            
+            SizedBox(height: 20),
             Center(
               child: ElevatedButton(
                 onPressed: () {
@@ -174,6 +195,140 @@ class _SettingsScreenState extends State<SettingsScreen> {
     showDialog(
       context: context,
       builder: (context) => ModelConfigDialog(config: config),
+    );
+  }
+
+  void _showAboutDialog(BuildContext context, SettingsProvider settingsProvider) async {
+    final packageInfo = await PackageInfo.fromPlatform();
+    
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(S.of(context).about),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(height: 16),
+              Text(S.of(context).appTitle, style: Theme.of(context).textTheme.headlineSmall),
+              Text('${S.of(context).version} ${packageInfo.version}'),
+              SizedBox(height: 16),
+              if (settingsProvider.hasUpdate)
+                Column(
+                  children: [
+                    Text(S.of(context).updateAvailable, style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                    Text('v${settingsProvider.updateInfo!.version}'),
+                    SizedBox(height: 8),
+                    Text(settingsProvider.updateInfo!.changelog),
+                  ],
+                )
+              else
+                Text(S.of(context).noUpdate),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(S.of(context).cancel),
+            ),
+            if (settingsProvider.hasUpdate)
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  _startUpdate(context, settingsProvider.updateInfo!);
+                },
+                child: Text(S.of(context).updateNow),
+              )
+            else
+              TextButton(
+                onPressed: () async {
+                    Navigator.pop(context);
+                    await settingsProvider.checkForUpdate();
+                    // We can't show snackbar here reliably because context might be gone, 
+                    // but we can try if the widget is still mounted or use a global key.
+                    // For simplicity, just check again.
+                    if (settingsProvider.hasUpdate) {
+                         _showAboutDialog(context, settingsProvider);
+                    } else {
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(S.of(context).noUpdate)));
+                    }
+                },
+                child: Text(S.of(context).checkUpdate),
+              ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _startUpdate(BuildContext context, UpdateInfo info) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => _UpdateProgressDialog(info: info),
+    );
+  }
+}
+
+class _UpdateProgressDialog extends StatefulWidget {
+  final UpdateInfo info;
+  _UpdateProgressDialog({required this.info});
+  @override
+  _UpdateProgressDialogState createState() => _UpdateProgressDialogState();
+}
+
+class _UpdateProgressDialogState extends State<_UpdateProgressDialog> {
+  double _progress = 0.0;
+  String _status = '';
+  final UpdateService _updateService = UpdateService();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _startDownload();
+    });
+  }
+
+  void _startDownload() async {
+    setState(() {
+      _status = S.of(context).downloading;
+    });
+    
+    String url = Platform.isAndroid ? widget.info.downloadUrlAndroid : widget.info.downloadUrlWindows;
+    
+    final file = await _updateService.downloadUpdate(url, (received, total) {
+      setState(() {
+        if (total != -1) {
+            _progress = received / total;
+        }
+      });
+    });
+
+    if (file != null) {
+      setState(() {
+        _status = S.of(context).install;
+      });
+      Navigator.pop(context); // Close progress dialog
+      await _updateService.installUpdate(file);
+    } else {
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Download failed')));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(_status.isEmpty ? S.of(context).downloading : _status),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          LinearProgressIndicator(value: _progress),
+          SizedBox(height: 10),
+          Text('${(_progress * 100).toStringAsFixed(0)}%'),
+        ],
+      ),
     );
   }
 }

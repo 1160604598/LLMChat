@@ -42,6 +42,7 @@ android {
                 // Fallback or handle missing keystore (e.g., CI might decode it differently)
                 // For now, let's assume if it's missing locally, we might fail or fallback.
                 // But in CI, we will ensure it exists.
+                println("Keystore file not found: ${keystoreFile.absolutePath}")
             }
         }
     }

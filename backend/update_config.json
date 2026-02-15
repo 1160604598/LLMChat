@@ -1,0 +1,8 @@
+{
+    "version": "1.1.0",
+    "build_number": 7,
+    "changelog": "1. Added auto-update feature.\n2. Bug fixes and performance improvements.",
+    "download_url_android": "http://10.0.2.2:8000/static/app-release_1.1.0.apk",
+    "download_url_windows": "http://localhost:8000/static/llm_chat_setup.exe",
+    "force_update": false
+}

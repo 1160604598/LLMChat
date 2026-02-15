@@ -62,6 +62,17 @@ class S {
       'editModel': 'Edit Model',
       'configName': 'Config Name',
       'noModelConfig': 'No model configurations',
+      'about': 'About',
+      'version': 'Version',
+      'checkUpdate': 'Check for Updates',
+      'updateAvailable': 'Update Available',
+      'updateNow': 'Update Now',
+      'downloading': 'Downloading...',
+      'install': 'Install',
+      'noUpdate': 'Your version is up to date',
+      'forceUpdate': 'Force Update',
+      'forceUpdateMessage': 'This version requires a mandatory update. Please update immediately.',
+      'downloadFailed': 'Download Failed. Please restart app.',
     },
     'zh': {
       'appTitle': 'LLM 对话',
@@ -111,6 +122,17 @@ class S {
       'saveSettingsFailed': '保存设置失败',
       'thinkingProcess': '深度思考',
       'noModelConfig': '暂无模型配置',
+      'about': '关于',
+      'version': '版本',
+      'checkUpdate': '检查更新',
+      'updateAvailable': '发现新版本',
+      'updateNow': '立即更新',
+      'downloading': '下载中...',
+      'install': '安装',
+      'noUpdate': '当前已是最新版本',
+      'forceUpdate': '强制更新',
+      'forceUpdateMessage': '此版本为强制更新，请立即更新。',
+      'downloadFailed': '下载失败，请重启应用。',
     },
   };
 
@@ -166,6 +188,17 @@ class S {
   String get editModel => get('editModel');
   String get configName => get('configName');
   String get noModelConfig => get('noModelConfig');
+  String get about => get('about');
+  String get version => get('version');
+  String get checkUpdate => get('checkUpdate');
+  String get updateAvailable => get('updateAvailable');
+  String get updateNow => get('updateNow');
+  String get downloading => get('downloading');
+  String get install => get('install');
+  String get noUpdate => get('noUpdate');
+  String get forceUpdate => get('forceUpdate');
+  String get forceUpdateMessage => get('forceUpdateMessage');
+  String get downloadFailed => get('downloadFailed');
 }
 
 class AppLocalizationsDelegate extends LocalizationsDelegate<S> {

@@ -17,11 +17,11 @@ Write-Host "Dist directory created: $distDir" -ForegroundColor Green
 # 2. 构建后端
 Write-Host "`n[1/3] Building Backend (Python/FastAPI)..." -ForegroundColor Yellow
 cd backend
-# 检查是否安装了 pyinstaller
-if (-not (Get-Command "pyinstaller" -ErrorAction SilentlyContinue)) {
-    Write-Host "Installing PyInstaller..."
-    pip install pyinstaller
-}
+# Install dependencies
+    Write-Host "Installing dependencies..."
+    python -m pip install -r requirements.txt
+    python -m pip install pyinstaller
+
 
 # 构建可执行文件
 $pyinstallerArgs = @(
@@ -47,7 +47,7 @@ $pyinstallerArgs = @(
 )
 
 Write-Host "Running PyInstaller..."
-& pyinstaller $pyinstallerArgs
+    python -m PyInstaller $pyinstallerArgs
 if ($LASTEXITCODE -ne 0) {
     Write-Host "PyInstaller failed!" -ForegroundColor Red
     exit 1
@@ -171,6 +171,15 @@ if (Test-Path $configFile) {
     Write-Host "Copied DefaultUserModelsConfig.json to dist." -ForegroundColor Green
 } else {
     Write-Host "Warning: DefaultUserModelsConfig.json not found." -ForegroundColor Yellow
+}
+
+# Copy update_config.json
+$updateConfigFile = "$PSScriptRoot\backend\update_config.json"
+if (Test-Path $updateConfigFile) {
+    Copy-Item $updateConfigFile "$distDir\" -Force
+    Write-Host "Copied update_config.json to dist." -ForegroundColor Green
+} else {
+    Write-Host "Warning: update_config.json not found." -ForegroundColor Yellow
 }
 
 # 4. 创建启动脚本

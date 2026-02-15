@@ -19,6 +19,9 @@
     *   **个性化**: 支持中英文切换及明暗主题模式。
 *   **📦 绿色免安装**: Windows 版本打包为便携式文件夹，内置所有运行环境。
 *   **🌐 全平台支持**: 支持 Windows, Android 和 Web 平台。
+*   **🔄 自动更新**: 
+    *   **Android**: 支持应用内检查更新、下载 APK 并自动调用系统安装器进行覆盖安装。
+    *   **Windows**: 支持应用内检查更新、下载新版安装包（绿色版暂支持下载提示）。
 
 ## 🏗️ 架构
 
@@ -98,12 +101,22 @@ flutter run -d windows
 3. **下载 APK**: 构建完成后，在 GitHub Actions 页面下载 `app-release` 构件（Artifact）。
 
 **本地构建 (可选)**:
-如果需要在本地构建 APK，请确保已安装 Android Studio 和 Android SDK。
-```bash
-cd frontend
-flutter build apk --release
+如果需要在本地构建 APK，请确保已安装 Android Studio 和 Android SDK，并配置好 JDK 17。
+本项目提供了便捷脚本 `build_android.ps1`，自动处理环境配置和签名。
+
+**使用方法**:
+1. 修改 `build_android.ps1` 中的 SDK 和 JDK 路径。
+2. 运行脚本：
+```powershell
+.\build_android.ps1
 ```
-生成的 APK 位于: `frontend/build/app/outputs/flutter-apk/app-release.apk`
+生成的 APK 位于: `dist/llm_chat_<version>_<timestamp>.apk` (例如 `llm_chat_1.0.7_20260215-1200.apk`)。
+
+**签名说明**:
+默认使用项目内置的 `frontend/android/app/upload-keystore.jks` 进行签名。
+*   Alias: `upload`
+*   Store Password: `123456`
+*   Key Password: `123456`
 
 #### Web 网页版
 提供一键打包脚本，构建 Flutter Web 前端并生成轻量级 Python Web Server。
@@ -135,3 +148,46 @@ flutter build apk --release
 ### 常见问题
 *   **注册失败**: 确保后端服务已启动且数据库文件 (`sql_app.db`) 有写入权限。
 *   **无法连接**: 检查防火墙设置，或确认登录界面的服务器地址配置正确。
+
+### 🚀 自动更新配置指南
+
+本项目支持简单的应用内自动更新机制。
+
+#### 1. 准备更新包
+
+将新版本的安装包（APK 或 EXE）放置在后端的 `backend/static/` 目录下：
+*   Android: `backend/static/app-release.apk`
+*   Windows: `backend/static/llm_chat_setup.exe`
+
+#### 2. 修改版本信息
+
+编辑后端根目录下的 `backend/update_config.json` 文件（**支持热更新，无需重启服务**）：
+
+```json
+{
+    "version": "1.1.0",
+    "build_number": 10,
+    "changelog": "1. Added auto-update feature.\n2. Bug fixes and performance improvements.",
+    "download_url_android": "http://<YOUR_SERVER_IP>:8000/static/app-release.apk",
+    "download_url_windows": "http://<YOUR_SERVER_IP>:8000/static/llm_chat_setup.exe",
+    "force_update": false
+}
+```
+
+*注意：`download_url` 建议配置为客户端可访问的公网 IP 或域名地址。*
+
+#### 3. 客户端版本号
+
+客户端当前版本号在 `frontend/pubspec.yaml` 中定义：
+
+```yaml
+version: 1.0.3+1 # 格式：版本名称+构建号
+```
+
+当后端返回的 `build_number` 大于客户端的构建号（`+`号后面的数字）时，客户端会弹出更新提示。
+
+### ⚠️ 常见连接问题
+
+*   **WRONG_VERSION_NUMBER 错误**:
+    这是因为客户端尝试使用 HTTPS 连接到 HTTP 服务器。
+    请在登录页面的设置中，确保服务器地址以 `http://` 开头（例如 `http://192.168.1.5:8000`），而不是 `https://`。
