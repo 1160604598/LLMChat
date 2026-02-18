@@ -53,6 +53,7 @@ class Message(Base):
     id = Column(Integer, primary_key=True, index=True)
     role = Column(String) # user, assistant, system
     content = Column(Text)
+    reasoning_content = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     conversation_id = Column(Integer, ForeignKey("conversations.id"))
 

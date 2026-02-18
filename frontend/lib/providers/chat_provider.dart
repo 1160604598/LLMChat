@@ -16,6 +16,7 @@ class ChatProvider with ChangeNotifier {
   bool _isLoading = false;
   bool _isStreaming = false;
   AuthProvider? _authProvider;
+  StreamSubscription? _subscription;
 
   void updateAuth(AuthProvider auth) {
     _authProvider = auth;
@@ -42,6 +43,13 @@ class ChatProvider with ChangeNotifier {
   ModelConfig? get selectedModelConfig => _selectedModelConfig;
   bool get isLoading => _isLoading;
   bool get isStreaming => _isStreaming;
+
+  void stopGeneration() {
+    _subscription?.cancel();
+    _subscription = null;
+    _isStreaming = false;
+    notifyListeners();
+  }
 
   void selectModelConfig(ModelConfig? config) {
     _selectedModelConfig = config;
@@ -165,7 +173,7 @@ class ChatProvider with ChangeNotifier {
 
       // Start a timer to update reasoning time periodically
       timer = Timer.periodic(Duration(milliseconds: 100), (t) {
-        if (!isThinking) {
+        if (!isThinking || !_isStreaming) {
           t.cancel();
           return;
         }
@@ -191,7 +199,7 @@ class ChatProvider with ChangeNotifier {
         }
       });
 
-      streamResponse.stream
+      _subscription = streamResponse.stream
           .transform(utf8.decoder)
           .transform(const LineSplitter())
           .listen((line) {
@@ -266,6 +274,7 @@ class ChatProvider with ChangeNotifier {
           }
         }
       }, onDone: () {
+        _subscription = null;
         if (isThinking) {
            stopwatch.stop();
            timer?.cancel();
@@ -273,6 +282,7 @@ class ChatProvider with ChangeNotifier {
         _isStreaming = false;
         notifyListeners();
       }, onError: (error) {
+        _subscription = null;
         _messages[assistantMsgIndex] = Message(
           role: 'assistant', 
           content: _messages[assistantMsgIndex].content + "\n[Error: $error]",

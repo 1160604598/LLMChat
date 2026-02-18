@@ -3,6 +3,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
+import '../widgets/thinking_process.dart';
 import '../providers/chat_provider.dart';
 import '../providers/auth_provider.dart';
 import '../models/user.dart';
@@ -307,6 +308,15 @@ class _ChatScreenState extends State<ChatScreen> {
                             final theme = Theme.of(context);
                             final isDark = theme.brightness == Brightness.dark;
 
+                            // Determine if thinking is finished
+                            bool isThinkingFinished = true;
+                            if (chatProvider.isStreaming && index == chatProvider.messages.length - 1) {
+                                // If we have content, we assume reasoning is done (mostly true)
+                                if (msg.content.isEmpty) {
+                                    isThinkingFinished = false;
+                                }
+                            }
+
                             return Align(
                               alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
                               child: Container(
@@ -325,63 +335,18 @@ class _ChatScreenState extends State<ChatScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     if (msg.reasoningContent != null && msg.reasoningContent!.isNotEmpty) ...[
-                                      Container(
-                                        width: double.infinity,
-                                        padding: EdgeInsets.all(8),
-                                        margin: EdgeInsets.only(bottom: 8),
-                                        decoration: BoxDecoration(
-                                            color: isDark ? Colors.black26 : Colors.white54,
-                                            borderRadius: BorderRadius.circular(8),
-                                            border: Border(
-                                              left: BorderSide(
-                                                width: 3, 
-                                                color: Colors.grey.withOpacity(0.5),
-                                              ),
-                                            ),
-                                          ),
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Row(
-                                              children: [
-                                                Text(
-                                                  S.of(context).thinkingProcess,
-                                                  style: TextStyle(
-                                                    fontWeight: FontWeight.bold,
-                                                    fontSize: 11,
-                                                    color: Colors.grey,
-                                                  ),
-                                                ),
-                                                if (msg.reasoningTimeMs != null) ...[
-                                                   SizedBox(width: 8),
-                                                   Text(
-                                                     '(${msg.reasoningTimeMs! > 1000 ? (msg.reasoningTimeMs! / 1000).toStringAsFixed(1) + "s" : msg.reasoningTimeMs.toString() + "ms"})',
-                                                     style: TextStyle(
-                                                       fontSize: 10,
-                                                       color: Colors.grey,
-                                                     ),
-                                                   ),
-                                                ],
-                                              ],
-                                            ),
-                                            SizedBox(height: 4),
-                                            SelectableText(
-                                              msg.reasoningContent!,
-                                              style: TextStyle(
-                                                //fontStyle: FontStyle.italic,
-                                                color: isDark ? Colors.white70 : Colors.black87,
-                                                fontSize: 12,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
+                                      ThinkingProcessWidget(
+                                        content: msg.reasoningContent,
+                                        timeMs: msg.reasoningTimeMs,
+                                        isFinished: isThinkingFinished,
                                       ),
                                     ],
-                                    MarkdownBody(
-                                      data: msg.content,
-                                      selectable: true,
-                                    ),
-                                    if (!isUser) ...[
+                                    if (msg.content.isNotEmpty)
+                                      MarkdownBody(
+                                        data: msg.content,
+                                        selectable: true,
+                                      ),
+                                    if (msg.content.isNotEmpty) ...[
                                       SizedBox(height: 8),
                                       Align(
                                         alignment: Alignment.centerRight,
@@ -438,6 +403,7 @@ class _ChatScreenState extends State<ChatScreen> {
                       border: OutlineInputBorder(),
                     ),
                     onSubmitted: (value) {
+                      if (chatProvider.isStreaming) return;
                       if (value.trim().isNotEmpty) {
                         setState(() {
                           _isFollowingBottom = true;
@@ -450,19 +416,19 @@ class _ChatScreenState extends State<ChatScreen> {
                   ),
                 ),
                 IconButton(
-                  icon: Icon(Icons.send),
-                  onPressed: chatProvider.isStreaming
-                      ? null
-                      : () {
-                          if (_messageController.text.trim().isNotEmpty) {
-                            setState(() {
-                              _isFollowingBottom = true;
-                              _showScrollToBottomButton = false;
-                            });
-                            chatProvider.sendMessage(_messageController.text);
-                            _messageController.clear();
-                          }
-                        },
+                  icon: chatProvider.isStreaming ? Icon(Icons.stop) : Icon(Icons.send),
+                  onPressed: () {
+                    if (chatProvider.isStreaming) {
+                      chatProvider.stopGeneration();
+                    } else if (_messageController.text.trim().isNotEmpty) {
+                      setState(() {
+                        _isFollowingBottom = true;
+                        _showScrollToBottomButton = false;
+                      });
+                      chatProvider.sendMessage(_messageController.text);
+                      _messageController.clear();
+                    }
+                  },
                 ),
               ],
             ),

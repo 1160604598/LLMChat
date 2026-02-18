@@ -386,6 +386,7 @@ class _ModelConfigDialogState extends State<ModelConfigDialog> {
                   DropdownMenuItem(value: 'Ollama', child: Text('Ollama')),
                   DropdownMenuItem(value: 'DeepSeek', child: Text('DeepSeek')),
                   DropdownMenuItem(value: 'Zhipu', child: Text('Zhipu AI')),
+                  DropdownMenuItem(value: 'Anthropic', child: Text('Anthropic')),
                   DropdownMenuItem(value: 'Other', child: Text('Other')),
                 ],
                 onChanged: (value) {
@@ -399,6 +400,8 @@ class _ModelConfigDialogState extends State<ModelConfigDialog> {
                         _baseUrlController.text = 'https://api.openai.com/v1';
                       } else if (_selectedProvider == 'DeepSeek') {
                         _baseUrlController.text = 'https://api.deepseek.com';
+                      } else if (_selectedProvider == 'Anthropic') {
+                        _baseUrlController.text = 'https://api.anthropic.com/v1';
                       }
                     }
                   });

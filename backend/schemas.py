@@ -5,6 +5,7 @@ from datetime import datetime
 class MessageBase(BaseModel):
     role: str
     content: str
+    reasoning_content: Optional[str] = None
 
 class MessageCreate(MessageBase):
     pass

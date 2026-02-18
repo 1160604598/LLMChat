@@ -101,21 +101,63 @@ async def stream_chat(
     headers = {
         "Content-Type": "application/json",
     }
-    if api_key:
-        headers["Authorization"] = f"Bearer {api_key}"
-
+    
     payload = {
         "model": model_name,
-        "messages": messages_payload,
         "stream": True
     }
+
+    if model_provider == "Anthropic":
+        if api_key:
+            headers["x-api-key"] = api_key
+        headers["anthropic-version"] = "2023-06-01"
+        
+        # Anthropic separates system prompt
+        system_message = None
+        filtered_messages = []
+        for msg in messages_payload:
+            if msg['role'] == 'system':
+                system_message = msg['content']
+            else:
+                filtered_messages.append(msg)
+        
+        if system_message:
+            payload['system'] = system_message
+            
+        # Ensure at least one message is present and starts with user
+        if not filtered_messages:
+            filtered_messages.append({"role": "user", "content": "Hello"})
+        elif filtered_messages[0]['role'] != 'user':
+            # Insert a dummy user message if the first message is not user (e.g. only assistant history)
+            filtered_messages.insert(0, {"role": "user", "content": "..."})
+            
+        payload['messages'] = filtered_messages
+        
+        # Enable thinking if model supports it (e.g. claude-3-7-sonnet or explicit "thinking" in name)
+        # Using a budget of 8192 tokens for thinking
+        if "claude-3-7" in model_name or "thinking" in model_name:
+             payload['max_tokens'] = 16384
+             payload['thinking'] = {
+                "type": "enabled",
+                "budget_tokens": 8192
+             }
+        else:
+             payload['max_tokens'] = 4096
+    else:
+        # Default to OpenAI
+        if api_key:
+            headers["Authorization"] = f"Bearer {api_key}"
+        payload["messages"] = messages_payload
 
     async def event_generator():
         full_response = ""
         client = httpx.AsyncClient(timeout=600.0)
         try:
             # Handle potential trailing slash in base_url
-            url = f"{base_url.rstrip('/')}/chat/completions"
+            if model_provider == "Anthropic":
+                url = f"{base_url.rstrip('/')}/messages"
+            else:
+                url = f"{base_url.rstrip('/')}/chat/completions"
             
             # If the user provided a full URL including /chat/completions, use it directly?
             # Standard OpenAI base_url usually ends with /v1
@@ -124,26 +166,82 @@ async def stream_chat(
             async with client.stream("POST", url, headers=headers, json=payload) as response:
                 if response.status_code != 200:
                     error_msg = await response.aread()
-                    yield f"Error: {response.status_code} - {error_msg.decode()}".encode()
+                    error_text = f"Error: {response.status_code} - {error_msg.decode()}"
+                    # Send error as a content chunk so it appears in the chat
+                    chunk = {
+                        "choices": [{"delta": {"content": error_text}}]
+                    }
+                    yield f"data: {json.dumps(chunk)}\n\n".encode()
                     return
 
                 async for line in response.aiter_lines():
-                    if line.startswith("data: "):
-                        # Pass through the raw data line including "data: " prefix
-                        # This maintains the OpenAI SSE format
-                        yield f"{line}\n\n".encode()
-                        
-                        data_str = line[6:]
-                        if data_str.strip() == "[DONE]":
-                            break
-                        try:
-                            data = json.loads(data_str)
-                            if "choices" in data and len(data["choices"]) > 0:
-                                delta = data["choices"][0].get("delta", {})
-                                if "content" in delta and delta["content"] is not None:
-                                    full_response += delta["content"]
-                        except json.JSONDecodeError:
-                            continue
+                    if model_provider == "Anthropic":
+                        if line.startswith("data:"):
+                            data_str = line[5:].strip()
+                            try:
+                                data = json.loads(data_str)
+                                if data.get("type") == "content_block_delta":
+                                    delta = data.get("delta", {})
+                                    if delta.get("type") == "text_delta":
+                                        text = delta.get("text", "")
+                                        full_response += text
+                                        # Convert to OpenAI format
+                                        chunk = {
+                                            "choices": [{"delta": {"content": text}}]
+                                        }
+                                        yield f"data: {json.dumps(chunk)}\n\n".encode()
+                                    elif delta.get("type") == "thinking_delta":
+                                        thinking = delta.get("thinking", "")
+                                        # Convert to OpenAI reasoning_content format
+                                        chunk = {
+                                            "choices": [{"delta": {"reasoning_content": thinking}}]
+                                        }
+                                        yield f"data: {json.dumps(chunk)}\n\n".encode()
+                                elif data.get("type") == "message_stop":
+                                    yield f"data: [DONE]\n\n".encode()
+                                elif data.get("type") == "error":
+                                    # Handle Anthropic specific error event if any
+                                    error_text = f"Error: {data.get('error', {}).get('message', 'Unknown error')}"
+                                    chunk = {
+                                        "choices": [{"delta": {"content": error_text}}]
+                                    }
+                                    yield f"data: {json.dumps(chunk)}\n\n".encode()
+                            except json.JSONDecodeError:
+                                continue
+                    else:
+                        if line.startswith("data: "):
+                            # Pass through the raw data line including "data: " prefix
+                            # This maintains the OpenAI SSE format
+                            yield f"{line}\n\n".encode()
+                            
+                            data_str = line[6:]
+                            if data_str.strip() == "[DONE]":
+                                break
+                            try:
+                                data = json.loads(data_str)
+                                if "choices" in data and len(data["choices"]) > 0:
+                                    delta = data["choices"][0].get("delta", {})
+                                    
+                                    # Pass through content
+                                    if "content" in delta and delta["content"] is not None:
+                                        full_response += delta["content"]
+                                        
+                                    # Pass through reasoning_content (DeepSeek R1 etc)
+                                    # We don't need to manually yield here because we are yielding the raw line above
+                                    # BUT, the raw line yielding above: `yield f"{line}\n\n".encode()`
+                                    # already passes everything to the frontend!
+                                    # So we just need to accumulate full_response for saving to DB?
+                                    # Wait, does the DB save reasoning?
+                                    # The current DB schema MessageCreate only has 'content'.
+                                    # If we want to save reasoning to DB, we need to extract it here.
+                                    
+                                    if "reasoning_content" in delta and delta["reasoning_content"] is not None:
+                                        # We might want to save this too? 
+                                        # Currently schemas.Message doesn't seem to have reasoning_content field.
+                                        # Let's check schemas.py again.
+                                        pass 
+                            except json.JSONDecodeError:
+                                continue
         except Exception as e:
             # Return error in SSE format or plain text?
             # Frontend expects stream. Let's send a custom error event or just text.

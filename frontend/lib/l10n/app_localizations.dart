@@ -49,6 +49,7 @@ class S {
       'providerOllama': 'Ollama',
       'providerDeepSeek': 'DeepSeek',
       'providerZhipu': 'Zhipu AI',
+      'providerAnthropic': 'Anthropic',
       'providerOther': 'Other',
       'configUpdated': 'Configuration updated',
       'copied': 'Copied to clipboard!',
@@ -109,6 +110,7 @@ class S {
       'providerOllama': 'Ollama',
       'providerDeepSeek': 'DeepSeek',
       'providerZhipu': '智谱AI',
+      'providerAnthropic': 'Anthropic',
       'providerOther': 'Other',
       'configUpdated': '配置已更新',
       'copied': '已复制到剪贴板!',
@@ -175,6 +177,7 @@ class S {
   String get providerOllama => get('providerOllama');
   String get providerDeepSeek => get('providerDeepSeek');
   String get providerZhipu => get('providerZhipu');
+  String get providerAnthropic => get('providerAnthropic');
   String get providerOther => get('providerOther');
   String get configUpdated => get('configUpdated');
   String get copied => get('copied');
