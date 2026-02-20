@@ -151,6 +151,7 @@ async def stream_chat(
 
     async def event_generator():
         full_response = ""
+        full_reasoning = ""
         client = httpx.AsyncClient(timeout=600.0)
         try:
             # Handle potential trailing slash in base_url
@@ -192,6 +193,7 @@ async def stream_chat(
                                         yield f"data: {json.dumps(chunk)}\n\n".encode()
                                     elif delta.get("type") == "thinking_delta":
                                         thinking = delta.get("thinking", "")
+                                        full_reasoning += thinking
                                         # Convert to OpenAI reasoning_content format
                                         chunk = {
                                             "choices": [{"delta": {"reasoning_content": thinking}}]
@@ -227,19 +229,8 @@ async def stream_chat(
                                         full_response += delta["content"]
                                         
                                     # Pass through reasoning_content (DeepSeek R1 etc)
-                                    # We don't need to manually yield here because we are yielding the raw line above
-                                    # BUT, the raw line yielding above: `yield f"{line}\n\n".encode()`
-                                    # already passes everything to the frontend!
-                                    # So we just need to accumulate full_response for saving to DB?
-                                    # Wait, does the DB save reasoning?
-                                    # The current DB schema MessageCreate only has 'content'.
-                                    # If we want to save reasoning to DB, we need to extract it here.
-                                    
                                     if "reasoning_content" in delta and delta["reasoning_content"] is not None:
-                                        # We might want to save this too? 
-                                        # Currently schemas.Message doesn't seem to have reasoning_content field.
-                                        # Let's check schemas.py again.
-                                        pass 
+                                        full_reasoning += delta["reasoning_content"]
                             except json.JSONDecodeError:
                                 continue
         except Exception as e:
@@ -251,10 +242,14 @@ async def stream_chat(
         finally:
             await client.aclose()
             # Save assistant message if conversation_id exists
-            if request.conversation_id and full_response:
+            if request.conversation_id and (full_response or full_reasoning):
                 new_db = database.SessionLocal()
                 try:
-                    crud.create_message(new_db, schemas.MessageCreate(role="assistant", content=full_response), request.conversation_id)
+                    crud.create_message(new_db, schemas.MessageCreate(
+                        role="assistant", 
+                        content=full_response,
+                        reasoning_content=full_reasoning if full_reasoning else None
+                    ), request.conversation_id)
                 finally:
                     new_db.close()
 
