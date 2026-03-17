@@ -15,6 +15,23 @@ class ApiService {
 
   static Future<void> init() async {
     final prefs = await SharedPreferences.getInstance();
+    
+    if (kIsWeb) {
+      try {
+        final response = await http.get(Uri.parse('version.json'));
+        if (response.statusCode == 200) {
+          final Map<String, dynamic> versionData = jsonDecode(response.body);
+          final String? serverUrl = versionData['default_server_url'];
+          if (serverUrl != null && serverUrl.isNotEmpty) {
+            baseUrl = prefs.getString('api_base_url') ?? serverUrl;
+            return;
+          }
+        }
+      } catch (e) {
+        print('Failed to load version.json: $e');
+      }
+    }
+    
     baseUrl = prefs.getString('api_base_url') ?? defaultBaseUrl;
   }
 

@@ -1,0 +1,7 @@
+{
+  "app_name": "llm_chat",
+  "version": "1.0.9",
+  "build_number": 6,
+  "package_name": "llm_chat",
+  "default_server_url": "http://127.0.0.1:8000"
+}

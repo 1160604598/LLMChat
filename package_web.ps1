@@ -31,6 +31,29 @@ if (-not (Test-Path $webSource)) {
 New-Item -ItemType Directory -Path "$releaseDir/www" | Out-Null
 Copy-Item "$webSource/*" "$releaseDir/www" -Recurse -Force
 
+# 1.1 读取 pubspec.yaml 中的版本号并更新 version.json
+Write-Host "Reading version from pubspec.yaml..." -ForegroundColor Cyan
+$pubspecContent = Get-Content "frontend/pubspec.yaml" -Raw
+if ($pubspecContent -match 'version:\s*(\d+\.\d+\.\d+)\+(\d+)') {
+    $version = $matches[1]
+    $buildNumber = $matches[2]
+    Write-Host "Version: $version (Build: $buildNumber)" -ForegroundColor Green
+    
+    $versionJsonPath = "$releaseDir/www/version.json"
+    $versionJson = @{
+        app_name = "llm_chat"
+        version = $version
+        build_number = [int]$buildNumber
+        package_name = "llm_chat"
+        default_server_url = "http://127.0.0.1:8000"
+    } | ConvertTo-Json -Depth 3
+    
+    $versionJson | Set-Content -Path $versionJsonPath -Encoding UTF8
+    Write-Host "version.json updated with version $version" -ForegroundColor Green
+} else {
+    Write-Host "Warning: Could not parse version from pubspec.yaml" -ForegroundColor Yellow
+}
+
 # 2. 创建简单的 Web 服务器脚本 (Python)
 # 注意：Here-String 的结束标记 '@ 必须顶格，不能有缩进
 $pyServerContent = @'

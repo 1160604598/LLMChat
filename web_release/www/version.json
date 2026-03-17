@@ -1,1 +1,7 @@
-{"app_name":"llm_chat","version":"1.0.8","build_number":"5","package_name":"llm_chat"}
+﻿{
+    "build_number":  7,
+    "app_name":  "llm_chat",
+    "version":  "1.0.10",
+    "default_server_url":  "http://127.0.0.1:8000",
+    "package_name":  "llm_chat"
+}
